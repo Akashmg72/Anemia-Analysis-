@@ -1,0 +1,132 @@
+---
+title: "Anemia Prevalence Analysis"
+author: "Akash Muguluvalli Gangadhara | Student Number: A00010702 | Programme: MSc in Business Management"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+---
+
+# Introduction
+
+Anemia is a global health issue that primarily affects vulnerable populations such as children and women. It leads to severe health complications if left untreated. This project examines the trends, geographical distribution, and economic correlations associated with anemia prevalence using global data from multiple years.
+
+# Load Data
+
+#| code-fold: true
+```{python}
+import pandas as pd
+
+# Load datasets
+indicator = pd.read_csv("unicef_indicator_1.csv")
+metadata = pd.read_csv("unicef_metadata.csv")
+
+# Merge datasets on country name
+df = indicator.merge(metadata, on="country", how="left")
+```
+
+# World Map of Anemia Prevalence
+
+#| code-fold: true
+```{python}
+import plotly.express as px
+
+df_map = df[(df['time_period'] == 2000) & (df['sex'] == 'Total')]
+fig = px.choropleth(
+    df_map,
+    locations='country',
+    locationmode='country names',
+    color='obs_value',
+    color_continuous_scale='Reds',
+    labels={'obs_value': 'Anemia Prevalence (%)'},
+    title='Global Anemia Prevalence Map (Year 2000)'
+)
+fig.show()
+```
+
+The world map illustrates anemia prevalence by country for the year 2000. Regions such as Sub-Saharan Africa and South Asia show the highest rates. Darker shades indicate higher prevalence. The map visually highlights geographical disparities in health conditions related to economic and developmental differences across the globe.
+
+# Global Trend Over Time
+
+#| code-fold: true
+```{python}
+import matplotlib.pyplot as plt
+
+df_trend = df[df['sex'] == 'Total'].groupby('time_period')['obs_value'].mean().reset_index()
+plt.figure(figsize=(10,6))
+plt.plot(df_trend['time_period'], df_trend['obs_value'], marker='o')
+plt.title('Global Average Anemia Prevalence (2000–2022)')
+plt.xlabel('Year')
+plt.ylabel('Anemia Prevalence (%)')
+plt.grid(True)
+plt.show()
+```
+
+The line chart displays the global average anemia prevalence over time. There is a slow but steady decline in overall prevalence from 2000 to 2022. However, the decline is not uniform across all regions, emphasizing the need for targeted efforts in specific geographical areas.
+
+# Top 10 Countries with Highest Anemia Prevalence
+
+#| code-fold: true
+```{python}
+country_summary = df[(df['sex'] == 'Total') & (df['obs_value'].notnull())]
+country_summary = country_summary.groupby('country').agg(
+    avg_anemia=('obs_value', 'mean'),
+    years_of_data=('time_period', 'count')
+).reset_index()
+top10_avg = country_summary.nlargest(10, 'avg_anemia')
+fig = px.bar(
+    top10_avg,
+    x='avg_anemia',
+    y='country',
+    orientation='h',
+    color='country',
+    labels={'country': 'Country', 'avg_anemia': 'Average Anemia Prevalence (%)'},
+    title='Top 10 Countries by Average Anemia Prevalence (Across Years)',
+    text='avg_anemia',
+    color_discrete_sequence=px.colors.qualitative.Vivid
+)
+fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+fig.update_layout(
+    yaxis={'categoryorder':'total ascending'},
+    plot_bgcolor='white',
+    bargap=0.3,
+    showlegend=False
+)
+fig.show()
+```
+
+The horizontal bar chart presents the top 10 countries with the highest average anemia prevalence over the recorded years. Each country is represented with a unique color for clarity. This highlights how anemia is concentrated in particular regions with socioeconomic challenges.
+
+# GDP vs Anemia Prevalence
+
+#| code-fold: true
+```{python}
+df_scatter = df[(df['sex'] == 'Total') & (df['obs_value'].notnull()) & (df['GDP per capita (constant 2015 US$)'].notnull())]
+scatter_summary = df_scatter.groupby('country').agg(
+    avg_anemia=('obs_value', 'mean'),
+    avg_gdp=('GDP per capita (constant 2015 US$)', 'mean')
+).reset_index()
+fig = px.scatter(
+    scatter_summary,
+    x='avg_gdp',
+    y='avg_anemia',
+    hover_name='country',
+    labels={'avg_gdp': 'Average GDP per Capita (US$)', 'avg_anemia': 'Average Anemia Prevalence (%)'},
+    title='Relationship Between GDP per Capita and Anemia Prevalence',
+    trendline='ols',
+    color='avg_anemia',
+    color_continuous_scale='Reds'
+)
+fig.update_layout(
+    plot_bgcolor='white'
+)
+fig.show()
+```
+
+The scatter plot demonstrates a negative correlation between GDP per capita and anemia prevalence. Countries with higher GDP levels tend to have lower anemia rates, highlighting the role of economic prosperity in improving health outcomes. This relationship underlines broader developmental challenges affecting health.
+
+# Conclusion
+
+Anemia remains a serious global health concern. Despite gradual improvements in some regions, disparities persist, particularly among low-income countries. This project highlights the relationship between economic development and health outcomes, emphasizing the need for continued efforts in addressing anemia prevalence through multi-sectoral approaches.
