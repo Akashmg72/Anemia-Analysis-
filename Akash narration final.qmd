@@ -5,7 +5,6 @@ format:
   html:
     toc: true
     code-fold: true
-    code-tools: true
     theme: cosmo
 ---
 
@@ -15,8 +14,8 @@ Anemia is a global health issue that primarily affects vulnerable populations su
 
 # Load Data
 
-#| code-fold: true
 ```{python}
+#| code-fold: true
 import pandas as pd
 
 # Load datasets
@@ -29,8 +28,8 @@ df = indicator.merge(metadata, on="country", how="left")
 
 # World Map of Anemia Prevalence
 
-#| code-fold: true
 ```{python}
+#| code-fold: true
 import plotly.express as px
 
 df_map = df[(df['time_period'] == 2000) & (df['sex'] == 'Total')]
@@ -43,6 +42,7 @@ fig = px.choropleth(
     labels={'obs_value': 'Anemia Prevalence (%)'},
     title='Global Anemia Prevalence Map (Year 2000)'
 )
+fig.update_layout(plot_bgcolor='white')
 fig.show()
 ```
 
@@ -50,26 +50,29 @@ The world map illustrates anemia prevalence by country for the year 2000. Region
 
 # Global Trend Over Time
 
-#| code-fold: true
 ```{python}
-import matplotlib.pyplot as plt
+#| code-fold: true
+import plotly.express as px
 
 df_trend = df[df['sex'] == 'Total'].groupby('time_period')['obs_value'].mean().reset_index()
-plt.figure(figsize=(10,6))
-plt.plot(df_trend['time_period'], df_trend['obs_value'], marker='o')
-plt.title('Global Average Anemia Prevalence (2000–2022)')
-plt.xlabel('Year')
-plt.ylabel('Anemia Prevalence (%)')
-plt.grid(True)
-plt.show()
+fig = px.line(
+    df_trend,
+    x='time_period',
+    y='obs_value',
+    markers=True,
+    title='Global Average Anemia Prevalence (2000–2022)',
+    labels={'time_period': 'Year', 'obs_value': 'Anemia Prevalence (%)'}
+)
+fig.update_layout(plot_bgcolor='white')
+fig.show()
 ```
 
 The line chart displays the global average anemia prevalence over time. There is a slow but steady decline in overall prevalence from 2000 to 2022. However, the decline is not uniform across all regions, emphasizing the need for targeted efforts in specific geographical areas.
 
 # Top 10 Countries with Highest Anemia Prevalence
 
-#| code-fold: true
 ```{python}
+#| code-fold: true
 country_summary = df[(df['sex'] == 'Total') & (df['obs_value'].notnull())]
 country_summary = country_summary.groupby('country').agg(
     avg_anemia=('obs_value', 'mean'),
@@ -101,8 +104,8 @@ The horizontal bar chart presents the top 10 countries with the highest average 
 
 # GDP vs Anemia Prevalence
 
-#| code-fold: true
 ```{python}
+#| code-fold: true
 df_scatter = df[(df['sex'] == 'Total') & (df['obs_value'].notnull()) & (df['GDP per capita (constant 2015 US$)'].notnull())]
 scatter_summary = df_scatter.groupby('country').agg(
     avg_anemia=('obs_value', 'mean'),
@@ -119,9 +122,7 @@ fig = px.scatter(
     color='avg_anemia',
     color_continuous_scale='Reds'
 )
-fig.update_layout(
-    plot_bgcolor='white'
-)
+fig.update_layout(plot_bgcolor='white')
 fig.show()
 ```
 
